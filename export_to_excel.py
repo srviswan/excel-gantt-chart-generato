@@ -133,6 +133,72 @@ def process_data_for_gantt(df):
     
     return pd.DataFrame(tasks)
 
+def calculate_resource_percentage(df_tasks, task):
+    """Calculate the percentage of unique resource months spent on a task."""
+    resource = task['Resource']
+    
+    # Get all tasks for this resource
+    resource_tasks = df_tasks[df_tasks['Resource'] == resource]
+    
+    # Calculate total unique resource-months
+    total_resource_months = len(set([
+        (t['Resource'], m) 
+        for _, t in resource_tasks.iterrows() 
+        for m in range(t['Start_Month'], t['End_Month'] + 1)
+    ]))
+    
+    # Calculate unique resource-months for this task
+    task_resource_months = len(set([
+        (resource, m) 
+        for m in range(task['Start_Month'], task['End_Month'] + 1)
+    ]))
+    
+    # Calculate percentage
+    return (task_resource_months / total_resource_months) * 100 if total_resource_months > 0 else 0
+
+
+def calculate_task1_percentages(df_tasks, display_color_map):
+    """Calculate percentages of unique resource months for each Task 1 (Display_Name)."""
+    task1_resource_months = {}
+    total_resource_months_by_display = {}
+    task1_percentages = {}
+    
+    # First, calculate total unique resource-months for each display name
+    for display_name in sorted(display_color_map.keys()):
+        tasks_with_display = df_tasks[df_tasks['Display_Name'] == display_name]
+        
+        # Get all resources used by this display name
+        resources = tasks_with_display['Resource'].unique()
+        
+        # For each resource, get all tasks with that resource
+        all_resource_months = set()
+        task_resource_months = set()
+        
+        for resource in resources:
+            resource_tasks = df_tasks[df_tasks['Resource'] == resource]
+            
+            # Add all resource-month pairs to the set
+            for _, t in resource_tasks.iterrows():
+                for m in range(t['Start_Month'], t['End_Month'] + 1):
+                    all_resource_months.add((t['Resource'], m))
+            
+            # Add resource-month pairs for this display name to the set
+            for _, t in tasks_with_display[tasks_with_display['Resource'] == resource].iterrows():
+                for m in range(t['Start_Month'], t['End_Month'] + 1):
+                    task_resource_months.add((t['Resource'], m))
+        
+        # Store the counts
+        task1_resource_months[display_name] = len(task_resource_months)
+        total_resource_months_by_display[display_name] = len(all_resource_months)
+        
+        # Calculate percentage
+        task_months = task1_resource_months.get(display_name, 0)
+        total_months = total_resource_months_by_display.get(display_name, 0)
+        task1_percentages[display_name] = (task_months / total_months) * 100 if total_months > 0 else 0
+    
+    return task1_percentages
+
+
 def create_excel_gantt(df_tasks, output_file):
     """Create an Excel file with Gantt chart representation."""
     # Create a new workbook
@@ -215,9 +281,8 @@ def create_excel_gantt(df_tasks, output_file):
                 
                 # Add Display_Name (Task 1) with percentage to the first cell of the bar
                 if month_idx == task['Start_Month']:
-                    # Calculate percentage of year (duration / 12 months)
-                    duration = task['Duration']
-                    percentage = (duration / 12) * 100
+                    # Calculate percentage of unique resource months for this task
+                    percentage = calculate_resource_percentage(df_tasks, task)
                     
                     # Format as "Task 1 Name (XX%)"
                     display_text = f"{task['Display_Name']} ({percentage:.0f}%)"
@@ -289,22 +354,13 @@ def create_excel_gantt(df_tasks, output_file):
         cell.alignment = Alignment(horizontal='center')
         cell.fill = PatternFill(start_color="DDDDDD", end_color="DDDDDD", fill_type="solid")
     
-    # Calculate percentage of year for each Task 1
-    task1_durations = {}
-    for _, task in df_tasks.iterrows():
-        display_name = task['Display_Name']
-        duration = task['Duration']
-        
-        if display_name in task1_durations:
-            task1_durations[display_name] = max(task1_durations[display_name], duration)
-        else:
-            task1_durations[display_name] = duration
+    # Calculate percentage of unique resource months for each Task 1
+    task1_percentages = calculate_task1_percentages(df_tasks, display_color_map)
     
     # Write Display_Name (Task 1) colors with percentage
     for i, display_name in enumerate(sorted(display_color_map.keys()), 2):
-        # Calculate percentage of year (duration / 12 months)
-        duration = task1_durations.get(display_name, 0)
-        percentage = (duration / 12) * 100
+        # Get percentage from calculated values
+        percentage = task1_percentages.get(display_name, 0)
         
         # Format as "Task 1 Name (XX%)"
         display_text = f"{display_name} ({percentage:.0f}%)"
