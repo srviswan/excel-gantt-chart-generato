@@ -202,9 +202,11 @@ def create_excel_gantt(df_tasks, output_file):
                                        end_color=task_color_map[task['Task']], 
                                        fill_type="solid")
                 
-                # Add task name to the first cell of the bar
+                # Add Task 1 to the first cell of the bar (instead of Task)
                 if month_idx == task['Start_Month']:
-                    cell.value = task['Task']
+                    # Use Task 1 if available, otherwise fall back to Task
+                    display_text = task['Task 1'] if pd.notna(task['Task 1']) and task['Task 1'] else task['Task']
+                    cell.value = display_text
                     cell.alignment = Alignment(horizontal='left')
                     cell.font = Font(color="FFFFFF", bold=True)
         
