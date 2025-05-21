@@ -132,15 +132,31 @@ def create_excel_gantt(df_tasks, output_file):
     # Sort tasks by Resource, Driver, Location, and Start date
     df_tasks = df_tasks.sort_values(by=['Resource', 'Driver', 'Location', 'Start'])
     
-    # Define colors for tasks
-    tasks = df_tasks['Task'].unique()
+    # Define colors for Task 1 values (instead of Task)
+    # Create a mapping of Task to Task 1
+    task_to_task1 = {}
+    for _, task in df_tasks.iterrows():
+        task_name = task['Task']
+        task1_value = task['Task 1'] if pd.notna(task['Task 1']) and task['Task 1'] else task['Task']
+        task_to_task1[task_name] = task1_value
+    
+    # Get unique Task 1 values for coloring
+    task1_values = sorted(set(task_to_task1.values()))
+    
     colors = [
         "1F77B4", "FF7F0E", "2CA02C", "D62728", "9467BD", 
         "8C564B", "E377C2", "7F7F7F", "BCBD22", "17BECF"
     ]
+    
+    # Create color map based on Task 1
+    task1_color_map = {}
+    for i, task1 in enumerate(task1_values):
+        task1_color_map[task1] = colors[i % len(colors)]
+    
+    # Map each Task to its corresponding Task 1 color
     task_color_map = {}
-    for i, task in enumerate(tasks):
-        task_color_map[task] = colors[i % len(colors)]
+    for task, task1 in task_to_task1.items():
+        task_color_map[task] = task1_color_map[task1]
     
     # Month headers - using full month names
     month_headers = ["January", "February", "March", "April", "May", "June", 
@@ -255,11 +271,11 @@ def create_excel_gantt(df_tasks, output_file):
             if i % 2 == 0:
                 cell.fill = PatternFill(start_color="F5F5F5", end_color="F5F5F5", fill_type="solid")
     
-    # Add a task legend sheet
-    ws_legend = wb.create_sheet(title="Task Legend")
+    # Add a task legend sheet for Task 1 values
+    ws_legend = wb.create_sheet(title="Task 1 Legend")
     
     # Write legend headers
-    legend_headers = ["Task", "Color"]
+    legend_headers = ["Task 1", "Color"]
     for col, header in enumerate(legend_headers, 1):
         cell = ws_legend.cell(row=1, column=col)
         cell.value = header
@@ -267,14 +283,14 @@ def create_excel_gantt(df_tasks, output_file):
         cell.alignment = Alignment(horizontal='center')
         cell.fill = PatternFill(start_color="DDDDDD", end_color="DDDDDD", fill_type="solid")
     
-    # Write task colors
-    for i, task in enumerate(sorted(task_color_map.keys()), 2):
-        ws_legend.cell(row=i, column=1).value = task
+    # Write Task 1 colors
+    for i, task1 in enumerate(sorted(task1_color_map.keys()), 2):
+        ws_legend.cell(row=i, column=1).value = task1
         
-        # Color cell based on task
+        # Color cell based on Task 1
         color_cell = ws_legend.cell(row=i, column=2)
-        color_cell.fill = PatternFill(start_color=task_color_map[task], 
-                                     end_color=task_color_map[task], 
+        color_cell.fill = PatternFill(start_color=task1_color_map[task1], 
+                                     end_color=task1_color_map[task1], 
                                      fill_type="solid")
     
     # Auto-adjust column widths
@@ -313,7 +329,7 @@ def main():
         print("\nThe Excel file contains:")
         print("1. Gantt Chart - Visual representation of tasks by Resource, Driver, Location")
         print("2. Resource Summary - Details of tasks grouped by Resource, Driver, Location")
-        print("3. Task Legend - Color coding for each task")
+        print("3. Task 1 Legend - Color coding for each Task 1 category")
     except Exception as e:
         print(f"Error: {str(e)}")
         return 1
