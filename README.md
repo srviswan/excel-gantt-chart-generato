@@ -1,14 +1,14 @@
-# Gantt Chart Generator
+# Excel Gantt Chart Generator
 
-This project provides a Python tool to generate Gantt charts from Excel data. It's designed to visualize project tasks, resources, and timelines in an interactive HTML Gantt chart.
+This project provides a Python tool to generate Gantt charts from Excel data. It's designed to visualize project tasks, resources, and timelines in an Excel-based Gantt chart.
 
 ## Features
 
 - Reads task data from an Excel file
-- Generates an interactive HTML Gantt chart
-- Displays tasks by resource, location, and business driver
-- Shows task duration as bars with task names as labels
-- Provides hover information with detailed task data
+- Generates a formatted Excel Gantt chart
+- Organizes tasks by Resource, Business Driver, and Location
+- Shows task duration as color-coded bars with task names as labels
+- Provides detailed summary information
 
 ## Requirements
 
@@ -16,20 +16,17 @@ This project provides a Python tool to generate Gantt charts from Excel data. It
 - Required Python packages (install via `pip install -r requirements.txt`):
   - pandas
   - openpyxl
-  - matplotlib
-  - plotly
 
 ## Input Excel Format
 
 The input Excel file should have the following columns:
 - `Task`: The name of the task
-- `Task1`: Task category or sub-type (optional)
+- `Task 1`: Task category or sub-type (optional)
 - `Business Driver`: The business reason for the task
-- `Resource`: The person or team responsible for the task
-- `Group`: Grouping category (optional)
+- `Resources`: The person or team responsible for the task
 - `Data`: Additional data about the task (optional)
 - `Location`: Where the task is being performed
-- Month columns (`Jan` through `Dec`): Mark with any value (e.g., 'X') to indicate which months the task spans
+- Month columns (`January` through `December`): Mark with any value (e.g., 'X') to indicate which months the task spans
 
 ## Usage
 
@@ -43,12 +40,20 @@ The input Excel file should have the following columns:
    python create_sample_data.py
    ```
 
-3. Run the Gantt chart generator:
+3. Run the simplified Excel Gantt chart generator:
    ```
-   python gantt_chart_generator.py --input sample_tasks.xlsx --output gantt_chart.html
+   python simple_excel_gantt.py --input sample_tasks.xlsx --output gantt_chart_export.xlsx
    ```
 
-4. Open the generated HTML file in your web browser to view the interactive Gantt chart.
+4. Open the generated Excel file to view the Gantt chart.
+
+## Output Excel Format
+
+The generated Excel file contains three sheets:
+
+1. **Gantt Chart** - Visual representation of tasks organized by Resource, Driver, and Location with color-coded bars for each task
+2. **Resource Summary** - Detailed information about tasks grouped by Resource, Driver, and Location
+3. **Task Legend** - Color coding reference for each task
 
 ## Example
 

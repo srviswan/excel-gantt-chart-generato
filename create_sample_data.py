@@ -17,7 +17,7 @@ def create_sample_data(output_file="sample_tasks.xlsx"):
             'Development Phase 1', 'Development Phase 2', 'Testing', 
             'Deployment', 'Training', 'Documentation', 'Post-Launch Review'
         ],
-        'Task1': [
+        'Task 1': [
             'Planning', 'Analysis', 'Design', 'Development', 'Development',
             'QA', 'Operations', 'Training', 'Documentation', 'Review'
         ],
@@ -25,14 +25,10 @@ def create_sample_data(output_file="sample_tasks.xlsx"):
             'Strategic', 'Strategic', 'Technical', 'Technical', 'Technical',
             'Quality', 'Operational', 'Adoption', 'Knowledge', 'Improvement'
         ],
-        'Resource': [
+        'Resources': [
             'Project Manager', 'Business Analyst', 'System Architect', 
             'Developer Team A', 'Developer Team B', 'QA Team', 
             'DevOps', 'Trainer', 'Technical Writer', 'Project Manager'
-        ],
-        'Group': [
-            'Management', 'Analysis', 'Design', 'Development', 'Development',
-            'Testing', 'Operations', 'Training', 'Documentation', 'Management'
         ],
         'Data': [
             'High', 'Medium', 'Medium', 'High', 'High',
@@ -44,54 +40,54 @@ def create_sample_data(output_file="sample_tasks.xlsx"):
         ],
     }
     
-    # Add month columns (Jan to Dec)
-    months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    # Add month columns (January to December)
+    months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
     
     # Initialize all month values to empty
     for month in months:
         data[month] = ['' for _ in range(len(data['Task']))]
     
     # Set task durations across months
-    # Project Planning: Jan-Feb
-    data['Jan'][0] = 'X'
-    data['Feb'][0] = 'X'
+    # Project Planning: January-February
+    data['January'][0] = 'X'
+    data['February'][0] = 'X'
     
-    # Requirements Gathering: Feb-Mar
-    data['Feb'][1] = 'X'
-    data['Mar'][1] = 'X'
+    # Requirements Gathering: February-March
+    data['February'][1] = 'X'
+    data['March'][1] = 'X'
     
-    # System Design: Mar-Apr
-    data['Mar'][2] = 'X'
-    data['Apr'][2] = 'X'
+    # System Design: March-April
+    data['March'][2] = 'X'
+    data['April'][2] = 'X'
     
-    # Development Phase 1: Apr-Jun
-    data['Apr'][3] = 'X'
+    # Development Phase 1: April-June
+    data['April'][3] = 'X'
     data['May'][3] = 'X'
-    data['Jun'][3] = 'X'
+    data['June'][3] = 'X'
     
-    # Development Phase 2: Jun-Aug
-    data['Jun'][4] = 'X'
-    data['Jul'][4] = 'X'
-    data['Aug'][4] = 'X'
+    # Development Phase 2: June-August
+    data['June'][4] = 'X'
+    data['July'][4] = 'X'
+    data['August'][4] = 'X'
     
-    # Testing: Aug-Sep
-    data['Aug'][5] = 'X'
-    data['Sep'][5] = 'X'
+    # Testing: August-September
+    data['August'][5] = 'X'
+    data['September'][5] = 'X'
     
-    # Deployment: Oct
-    data['Oct'][6] = 'X'
+    # Deployment: October
+    data['October'][6] = 'X'
     
-    # Training: Oct-Nov
-    data['Oct'][7] = 'X'
-    data['Nov'][7] = 'X'
+    # Training: October-November
+    data['October'][7] = 'X'
+    data['November'][7] = 'X'
     
-    # Documentation: Sep-Nov
-    data['Sep'][8] = 'X'
-    data['Oct'][8] = 'X'
-    data['Nov'][8] = 'X'
+    # Documentation: September-November
+    data['September'][8] = 'X'
+    data['October'][8] = 'X'
+    data['November'][8] = 'X'
     
-    # Post-Launch Review: Dec
-    data['Dec'][9] = 'X'
+    # Post-Launch Review: December
+    data['December'][9] = 'X'
     
     # Create DataFrame
     df = pd.DataFrame(data)

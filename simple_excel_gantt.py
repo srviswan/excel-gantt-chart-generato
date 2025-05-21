@@ -1,24 +1,27 @@
 #!/usr/bin/env python3
 """
-Export Gantt Chart to Excel
+Simple Excel Gantt Chart Generator
 
-This script takes the processed task data and exports it to an Excel file
-with formatting to represent the Gantt chart visually.
+This script takes an Excel file with task data and generates a Gantt chart Excel file.
+It handles the following column format:
+- Task, Task 1, Business Driver, Resources, Data
+- Month columns from January to December (full names)
+
+Usage:
+    python simple_excel_gantt.py --input <input_excel_file> --output <output_excel_file>
 """
 
 import pandas as pd
 import argparse
 import os
 from datetime import datetime, timedelta
-import numpy as np
 from openpyxl import Workbook
-from openpyxl.styles import PatternFill, Border, Side, Alignment, Font, Color
+from openpyxl.styles import PatternFill, Alignment, Font
 from openpyxl.utils import get_column_letter
-import json
 
 def parse_arguments():
     """Parse command line arguments."""
-    parser = argparse.ArgumentParser(description='Export Gantt chart data to Excel.')
+    parser = argparse.ArgumentParser(description='Generate a Gantt chart Excel file from task data.')
     parser.add_argument('--input', '-i', required=True, help='Path to the input Excel file with task data')
     parser.add_argument('--output', '-o', default='gantt_chart_export.xlsx', help='Path to save the output Excel file')
     return parser.parse_args()
@@ -30,16 +33,6 @@ def read_excel_data(file_path):
     
     try:
         df = pd.read_excel(file_path)
-        
-        # Map expected column names to actual column names
-        expected_columns = {
-            'Task': 'Task',
-            'Task 1': 'Task 1',
-            'Business Driver': 'Business Driver',
-            'Resource': 'Resources',  # Note: 'Resources' in input file
-            'Data': 'Data',
-            'Location': 'Location'
-        }
         
         # Check if the required columns exist
         missing_columns = []
@@ -150,7 +143,8 @@ def create_excel_gantt(df_tasks, output_file):
         task_color_map[task] = colors[i % len(colors)]
     
     # Month headers - using full month names
-    month_headers = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+    month_headers = ["January", "February", "March", "April", "May", "June", 
+                     "July", "August", "September", "October", "November", "December"]
     
     # Set up headers
     headers = ["Resource", "Driver", "Location"]
@@ -232,7 +226,8 @@ def create_excel_gantt(df_tasks, output_file):
     ).reset_index()
     
     # Write summary headers
-    summary_headers = ["Resource", "Driver", "Location", "Tasks", "Task 1", "Data", "Task Count", "Total Duration (months)", "Months"]
+    summary_headers = ["Resource", "Driver", "Location", "Tasks", "Task 1", "Data", 
+                       "Task Count", "Total Duration (months)", "Months"]
     for col, header in enumerate(summary_headers, 1):
         cell = ws_summary.cell(row=1, column=col)
         cell.value = header
@@ -281,7 +276,7 @@ def create_excel_gantt(df_tasks, output_file):
                                      fill_type="solid")
     
     # Auto-adjust column widths
-    for ws_name in [ws, ws_summary]:
+    for ws_name in [ws, ws_summary, ws_legend]:
         for col in range(1, ws_name.max_column + 1):
             max_length = 0
             for row in range(1, ws_name.max_row + 1):
