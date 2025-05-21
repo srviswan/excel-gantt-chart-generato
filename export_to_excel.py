@@ -108,6 +108,9 @@ def process_data_for_gantt(df):
         else:
             end_date = datetime(current_year, end_month + 1, 1) - timedelta(days=1)
         
+        # Use Task 1 as the primary identifier, fallback to Task if Task 1 is empty
+        display_name = task1 if pd.notna(task1) and task1 else task_name
+        
         # Create a combined key for Resource, Driver, Location
         resource_key = f"{resource} | {driver} | {location}"
         
@@ -115,6 +118,7 @@ def process_data_for_gantt(df):
         tasks.append({
             'Task': task_name,
             'Task 1': task1,
+            'Display_Name': display_name,  # New field for display purposes
             'Resource': resource,
             'Location': location,
             'Driver': driver,
@@ -139,31 +143,18 @@ def create_excel_gantt(df_tasks, output_file):
     # Sort tasks by Resource, Driver, Location, and Start date
     df_tasks = df_tasks.sort_values(by=['Resource', 'Driver', 'Location', 'Start'])
     
-    # Define colors for Task 1 values (instead of Task)
-    # Create a mapping of Task to Task 1
-    task_to_task1 = {}
-    for _, task in df_tasks.iterrows():
-        task_name = task['Task']
-        task1_value = task['Task 1'] if pd.notna(task['Task 1']) and task['Task 1'] else task['Task']
-        task_to_task1[task_name] = task1_value
-    
-    # Get unique Task 1 values for coloring
-    task1_values = sorted(set(task_to_task1.values()))
+    # Define colors directly based on Display_Name (which is Task 1 or Task if Task 1 is empty)
+    display_names = df_tasks['Display_Name'].unique()
     
     colors = [
         "1F77B4", "FF7F0E", "2CA02C", "D62728", "9467BD", 
         "8C564B", "E377C2", "7F7F7F", "BCBD22", "17BECF"
     ]
     
-    # Create color map based on Task 1
-    task1_color_map = {}
-    for i, task1 in enumerate(task1_values):
-        task1_color_map[task1] = colors[i % len(colors)]
-    
-    # Map each Task to its corresponding Task 1 color
-    task_color_map = {}
-    for task, task1 in task_to_task1.items():
-        task_color_map[task] = task1_color_map[task1]
+    # Create color map based on Display_Name (Task 1 values)
+    display_color_map = {}
+    for i, name in enumerate(sorted(display_names)):
+        display_color_map[name] = colors[i % len(colors)]
     
     # Month headers - using full month names
     month_headers = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
@@ -195,9 +186,7 @@ def create_excel_gantt(df_tasks, output_file):
     for resource_key, group in df_tasks.groupby('ResourceKey'):
         resource, driver, location = resource_key.split(' | ')
         
-        # Add a blank row between resource groups (except before the first one)
-        if row_idx > 2:
-            row_idx += 1
+        # No blank rows between resource groups
         
         # Write the resource, driver, location in the first columns
         ws.cell(row=row_idx, column=1).value = resource
@@ -219,16 +208,14 @@ def create_excel_gantt(df_tasks, output_file):
                 # Add the task to the cell
                 cell = ws.cell(row=row_idx, column=col_idx)
                 
-                # Color based on task
-                cell.fill = PatternFill(start_color=task_color_map[task['Task']], 
-                                       end_color=task_color_map[task['Task']], 
+                # Color based on Display_Name (Task 1 value)
+                cell.fill = PatternFill(start_color=display_color_map[task['Display_Name']], 
+                                       end_color=display_color_map[task['Display_Name']], 
                                        fill_type="solid")
                 
-                # Add Task 1 to the first cell of the bar (instead of Task)
+                # Add Display_Name (Task 1) to the first cell of the bar
                 if month_idx == task['Start_Month']:
-                    # Use Task 1 if available, otherwise fall back to Task
-                    display_text = task['Task 1'] if pd.notna(task['Task 1']) and task['Task 1'] else task['Task']
-                    cell.value = display_text
+                    cell.value = task['Display_Name']
                     cell.alignment = Alignment(horizontal='left')
                     cell.font = Font(color="FFFFFF", bold=True)
         
@@ -238,16 +225,23 @@ def create_excel_gantt(df_tasks, output_file):
     ws_summary = wb.create_sheet(title="Resource Summary")
     
     # Create a summary table by resource, driver, location
+    # Make sure to handle empty values properly
     resource_summary = df_tasks.groupby(['Resource', 'Driver', 'Location']).agg(
         Tasks=('Task', lambda x: ', '.join(sorted(set(x)))),
-        Task1=('Task 1', lambda x: ', '.join(sorted(set([str(i) for i in x if pd.notna(i)])))),
-        Data=('Data', lambda x: ', '.join(sorted(set([str(i) for i in x if pd.notna(i)])))),
+        Task1=('Task 1', lambda x: ', '.join(sorted(set([str(i) for i in x if pd.notna(i) and i != ''])))),
+        Data=('Data', lambda x: ', '.join(sorted(set([str(i) for i in x if pd.notna(i) and i != ''])))),
         Task_Count=('Task', 'count'),
         Total_Duration=('Duration', 'sum'),
         Months=('Task', lambda x: ', '.join([month_headers[m-1] for m in sorted(set(
             [month for task_idx, task in df_tasks[df_tasks['Task'].isin(x)].iterrows() 
              for month in range(task['Start_Month'], task['End_Month']+1)]))]))
     ).reset_index()
+    
+    # Replace 'nan' strings with empty strings
+    for col in ['Task1', 'Data']:
+        resource_summary[col] = resource_summary[col].str.replace('nan', '').str.strip(', ')
+        # Also handle cases where the string starts or ends with a comma
+        resource_summary[col] = resource_summary[col].str.strip(', ')
     
     # Write summary headers
     summary_headers = ["Resource", "Driver", "Location", "Tasks", "Task 1", "Data", "Task Count", "Total Duration (months)", "Months"]
@@ -288,14 +282,14 @@ def create_excel_gantt(df_tasks, output_file):
         cell.alignment = Alignment(horizontal='center')
         cell.fill = PatternFill(start_color="DDDDDD", end_color="DDDDDD", fill_type="solid")
     
-    # Write Task 1 colors
-    for i, task1 in enumerate(sorted(task1_color_map.keys()), 2):
-        ws_legend.cell(row=i, column=1).value = task1
+    # Write Display_Name (Task 1) colors
+    for i, display_name in enumerate(sorted(display_color_map.keys()), 2):
+        ws_legend.cell(row=i, column=1).value = display_name
         
-        # Color cell based on Task 1
+        # Color cell based on Display_Name
         color_cell = ws_legend.cell(row=i, column=2)
-        color_cell.fill = PatternFill(start_color=task1_color_map[task1], 
-                                     end_color=task1_color_map[task1], 
+        color_cell.fill = PatternFill(start_color=display_color_map[display_name], 
+                                     end_color=display_color_map[display_name], 
                                      fill_type="solid")
     
     # Auto-adjust column widths
