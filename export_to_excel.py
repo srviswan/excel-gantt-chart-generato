@@ -282,9 +282,27 @@ def create_excel_gantt(df_tasks, output_file):
         cell.alignment = Alignment(horizontal='center')
         cell.fill = PatternFill(start_color="DDDDDD", end_color="DDDDDD", fill_type="solid")
     
-    # Write Display_Name (Task 1) colors
+    # Calculate percentage of year for each Task 1
+    task1_durations = {}
+    for _, task in df_tasks.iterrows():
+        display_name = task['Display_Name']
+        duration = task['Duration']
+        
+        if display_name in task1_durations:
+            task1_durations[display_name] = max(task1_durations[display_name], duration)
+        else:
+            task1_durations[display_name] = duration
+    
+    # Write Display_Name (Task 1) colors with percentage
     for i, display_name in enumerate(sorted(display_color_map.keys()), 2):
-        ws_legend.cell(row=i, column=1).value = display_name
+        # Calculate percentage of year (duration / 12 months)
+        duration = task1_durations.get(display_name, 0)
+        percentage = (duration / 12) * 100
+        
+        # Format as "Task 1 Name (XX%)"
+        display_text = f"{display_name} ({percentage:.0f}%)"
+        
+        ws_legend.cell(row=i, column=1).value = display_text
         
         # Color cell based on Display_Name
         color_cell = ws_legend.cell(row=i, column=2)
