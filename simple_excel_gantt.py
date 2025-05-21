@@ -207,9 +207,16 @@ def create_excel_gantt(df_tasks, output_file):
                                        end_color=display_color_map[task['Display_Name']], 
                                        fill_type="solid")
                 
-                # Add Display_Name (Task 1) to the first cell of the bar
+                # Add Display_Name (Task 1) with percentage to the first cell of the bar
                 if month_idx == task['Start_Month']:
-                    cell.value = task['Display_Name']
+                    # Calculate percentage of year (duration / 12 months)
+                    duration = task['Duration']
+                    percentage = (duration / 12) * 100
+                    
+                    # Format as "Task 1 Name (XX%)"
+                    display_text = f"{task['Display_Name']} ({percentage:.0f}%)"
+                    
+                    cell.value = display_text
                     cell.alignment = Alignment(horizontal='left')
                     cell.font = Font(color="FFFFFF", bold=True)
         
